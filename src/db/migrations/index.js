@@ -8,6 +8,7 @@ const messageTypeMigration = require("./007_message_type");
 const leadTrackingTokenMigration = require("./008_lead_tracking_token");
 const leadWorkflowOpsMigration = require("./009_lead_workflow_ops");
 const lawfulInquiryCleanupMigration = require("./010_lawful_inquiry_cleanup");
+const lineItemsJsonMigration = require("./010_line_items_json");
 const moreIndexesMigration = require("./011_more_indexes");
 
 const migrations = [
@@ -21,6 +22,7 @@ const migrations = [
   leadTrackingTokenMigration,
   leadWorkflowOpsMigration,
   lawfulInquiryCleanupMigration,
+  lineItemsJsonMigration,
   moreIndexesMigration,
 ];
 
