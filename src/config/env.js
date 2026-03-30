@@ -10,6 +10,7 @@ const {
 
 loadEnvFiles();
 
+// URL validation is centralized in src/config/helpers.js::optionalUrlString.
 const NODE_ENV = optionalString("NODE_ENV") || "development";
 const isProduction = NODE_ENV === "production";
 const BOT_ENABLED = optionalBoolean("BOT_ENABLED", true);
