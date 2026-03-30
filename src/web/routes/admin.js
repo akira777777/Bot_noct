@@ -266,13 +266,16 @@ function createAdminRoutes({
       "next_follow_up_at", "created_at", "updated_at",
     ];
 
+    // Protects exported CSV from spreadsheet formula injection.
     function escapeCsv(value) {
       if (value === null || value === undefined) return "";
       const str = String(value);
-      if (str.includes(",") || str.includes('"') || str.includes("\n")) {
-        return '"' + str.replace(/"/g, '""') + '"';
+      const startsWithFormulaToken = /^[=+\-@]/.test(str.trimStart());
+      const safeStr = startsWithFormulaToken ? `'${str}` : str;
+      if (safeStr.includes(",") || safeStr.includes('"') || safeStr.includes("\n")) {
+        return '"' + safeStr.replace(/"/g, '""') + '"';
       }
-      return str;
+      return safeStr;
     }
 
     const rows = leads.map((l) => headers.map((h) => escapeCsv(l[h])).join(","));
