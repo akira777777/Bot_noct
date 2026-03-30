@@ -32,6 +32,7 @@ function createWebServer({
   compressionEnabled = true,
   cacheService = null,
   queueService = null,
+  webhookRouter = null,
   environment = isProduction ? "production" : "development",
 }) {
   const app = express();
@@ -263,6 +264,11 @@ function createWebServer({
         });
       }),
     );
+  }
+
+  // Webhook endpoint should be mounted before 404/error handlers.
+  if (webhookRouter) {
+    app.use(webhookRouter);
   }
 
   // ==========================================================================

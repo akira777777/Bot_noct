@@ -395,6 +395,13 @@ async function bootstrap() {
     });
   }
 
+  let webhookRouter = null;
+  if (webhookEnabled && botConfig && bot) {
+    const webhookPath = `/webhook/${botConfig.BOT_TOKEN}`;
+    webhookRouter = bot.webhookCallback(webhookPath);
+    log.info("Webhook handler configured", { path: webhookPath });
+  }
+
   // Create web server
   const webServer = createWebServer({
     repos,
@@ -407,15 +414,9 @@ async function bootstrap() {
     compressionEnabled: API_COMPRESSION,
     cacheService,
     queueService,
+    webhookRouter,
     environment: NODE_ENV,
   });
-
-  // Mount webhook handler if using webhook mode
-  if (webhookEnabled && botConfig && bot) {
-    const webhookPath = `/webhook/${botConfig.BOT_TOKEN}`;
-    webServer.use(bot.webhookCallback(webhookPath));
-    log.info("Webhook handler mounted", { path: webhookPath });
-  }
 
   // Initialize resources
   const resources = {
