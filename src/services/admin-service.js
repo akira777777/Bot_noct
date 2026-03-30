@@ -245,11 +245,14 @@ function createAdminService({ repos, templates = DEFAULT_QUICK_TEMPLATES }) {
 
     function escapeCsv(value) {
       if (value === null || value === undefined) return "";
+      const isString = typeof value === "string";
       const str = String(value);
-      if (str.includes(",") || str.includes('"') || str.includes("\n")) {
-        return '"' + str.replace(/"/g, '""') + '"';
+      const startsWithFormulaToken = isString && /^[=+\-@]/.test(str);
+      const safeStr = startsWithFormulaToken ? `'${str}` : str;
+      if (safeStr.includes(",") || safeStr.includes('"') || safeStr.includes("\n")) {
+        return '"' + safeStr.replace(/"/g, '""') + '"';
       }
-      return str;
+      return safeStr;
     }
 
     const rows = leads.map((l) =>

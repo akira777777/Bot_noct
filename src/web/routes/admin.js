@@ -269,8 +269,9 @@ function createAdminRoutes({
     // Protects exported CSV from spreadsheet formula injection.
     function escapeCsv(value) {
       if (value === null || value === undefined) return "";
+      const isString = typeof value === "string";
       const str = String(value);
-      const startsWithFormulaToken = /^[=+\-@]/.test(str.trimStart());
+      const startsWithFormulaToken = isString && /^[=+\-@]/.test(str);
       const safeStr = startsWithFormulaToken ? `'${str}` : str;
       if (safeStr.includes(",") || safeStr.includes('"') || safeStr.includes("\n")) {
         return '"' + safeStr.replace(/"/g, '""') + '"';

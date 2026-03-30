@@ -137,6 +137,63 @@ test("admin CSV export stays protected by API key auth", async (t) => {
   assert.equal(authorized.status, 200);
 });
 
+test("admin CSV export prefixes risky string values before CSV escaping", async (t) => {
+  const adminId = 9001;
+  const apiSecret = "test-api-secret";
+  const { db, cleanup } = createTempDb("bot-noct-api-");
+  const repos = createRepositories(db);
+
+  repos.users.upsert({
+    telegram_id: 2002,
+    username: "@danger",
+    first_name: "=2+2",
+    last_name: "-user",
+    role: "client",
+  });
+  repos.leads.create({
+    client_telegram_id: 2002,
+    product_code: "+code",
+    product_name: "=HYPERLINK(\"http://evil\")",
+    quantity: -3,
+    comment: "@sum(1,2)",
+    contact_label: "-phone",
+    source_payload: "=channel",
+    status: "new",
+  });
+
+  const app = createWebServer({
+    repos,
+    conversationService: {},
+    bot: {},
+    adminId,
+    apiSecret,
+    corsOrigin: null,
+    isProduction: false,
+  });
+  const server = await startServer(app);
+  t.after(async () => {
+    await stopServer(server);
+    cleanup();
+  });
+
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const response = await fetch(`${baseUrl}/api/admin/export/leads`, {
+    headers: { "X-Api-Key": apiSecret },
+  });
+  const csv = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.match(csv, /'@danger/);
+  assert.match(csv, /'=2\+2/);
+  assert.match(csv, /'-user/);
+  assert.match(csv, /'\+code/);
+  assert.match(csv, /'=HYPERLINK/);
+  assert.match(csv, /"'@sum\(1,2\)"/);
+  assert.match(csv, /'-phone/);
+  assert.match(csv, /'=channel/);
+  assert.match(csv, /,-3,/);
+});
+
 test("admin API status update reuses lead workflow side effects", async (t) => {
   const adminId = 9001;
   const apiSecret = "test-api-secret";
