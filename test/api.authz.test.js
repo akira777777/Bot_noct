@@ -162,3 +162,34 @@ test("public lead status endpoint rejects malformed tracking tokens", async (t) 
   assert.equal(payload.ok, false);
   assert.match(payload.error, /tracking token/i);
 });
+
+test("admin endpoints are not affected by the public API rate limiter", async (t) => {
+  const adminId = 9001;
+  const apiSecret = "test-secret-key";
+  const { db, cleanup } = createTempDb("bot-noct-authz-");
+  const repos = createRepositories(db);
+
+  const app = createWebServer({
+    repos,
+    conversationService: {},
+    bot: {},
+    adminId,
+    apiSecret,
+    corsOrigin: null,
+    isProduction: false,
+  });
+  const server = await startServer(app);
+
+  t.after(async () => {
+    await stopServer(server);
+    cleanup();
+  });
+
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const headers = { "X-Api-Key": apiSecret };
+
+  for (let i = 0; i < 61; i += 1) {
+    const response = await fetch(`${baseUrl}/api/admin/leads`, { headers });
+    assert.equal(response.status, 200);
+  }
+});

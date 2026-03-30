@@ -133,10 +133,21 @@ function createWebServer({
     max: 60,
     message: "Слишком много запросов. Попробуйте позже.",
   });
+  const isPublicApiPath = (path) =>
+    path === "/catalog" ||
+    path.startsWith("/catalog/") ||
+    path === "/lead" ||
+    path.startsWith("/lead/");
+  const publicApiLimiter = (req, res, next) => {
+    if (!isPublicApiPath(req.path)) {
+      return next();
+    }
+    return publicLimiter(req, res, next);
+  };
 
   app.use(
     "/api",
-    publicLimiter,
+    publicApiLimiter,
     createPublicRoutes({
       repos,
       bot,
