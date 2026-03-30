@@ -127,7 +127,7 @@ async function initQueueService(redisConfig) {
  * Create a queue with configuration
  */
 function createQueue(name, redisConfig) {
-  const queue = new Queue(name, {
+  const queueOptions = {
     redis: {
       host: redisConfig.host || "localhost",
       port: redisConfig.port || 6379,
@@ -147,7 +147,13 @@ function createQueue(name, redisConfig) {
       attempts: RETRY_CONFIG.attempts,
       backoff: RETRY_CONFIG.backoff,
     },
-  });
+  };
+
+  if (RATE_LIMITS[name]) {
+    queueOptions.limiter = RATE_LIMITS[name];
+  }
+
+  const queue = new Queue(name, queueOptions);
 
   return queue;
 }

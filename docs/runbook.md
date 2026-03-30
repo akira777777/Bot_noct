@@ -45,6 +45,16 @@ Then verify:
    - verify token and delivery mode
 5. If issue is user-facing and active, rollback first.
 
+## Queue Rate Limits (Burst Control)
+
+Configured Bull queue limits (applied via queue `limiter`):
+
+- `messages`: max **30** jobs per **1000 ms**
+- `webhooks`: max **100** jobs per **1000 ms**
+- `notifications`: max **50** jobs per **1000 ms**
+
+Operational note: spikes above these values are queued and drained at the configured rate; this is expected and not an incident by itself.
+
 ## Common Failure Modes
 
 - Missing `BOT_TOKEN` with `BOT_ENABLED=true`

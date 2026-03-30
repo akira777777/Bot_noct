@@ -11,6 +11,7 @@ The repository keeps the existing API paths and SQLite tables for backward compa
 - Next.js dashboard for request management and reporting
 - SQLite storage with automatic migrations and default lawful sample catalog
 - Optional Redis cache and Bull queues
+- Queue burst limits (Bull limiter): `messages` 30 jobs/sec, `webhooks` 100 jobs/sec, `notifications` 50 jobs/sec
 - API-only runtime via `BOT_ENABLED=false` for smoke checks, tests, and non-Telegram environments
 
 ## Runtime Modes
