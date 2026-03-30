@@ -177,6 +177,7 @@ function createWebServer({
   if (queueService) {
     app.get(
       "/api/admin/queues",
+      adminLimiter,
       apiKeyAuth,
       asyncHandler(async (req, res) => {
         const stats = await queueService.getQueueStats();
@@ -186,6 +187,7 @@ function createWebServer({
 
     app.post(
       "/api/admin/queues/:name/pause",
+      adminLimiter,
       apiKeyAuth,
       asyncHandler(async (req, res) => {
         await queueService.pauseQueue(req.params.name);
@@ -195,6 +197,7 @@ function createWebServer({
 
     app.post(
       "/api/admin/queues/:name/resume",
+      adminLimiter,
       apiKeyAuth,
       asyncHandler(async (req, res) => {
         await queueService.resumeQueue(req.params.name);
@@ -209,6 +212,7 @@ function createWebServer({
   if (cacheService) {
     app.get(
       "/api/admin/cache",
+      adminLimiter,
       apiKeyAuth,
       asyncHandler(async (req, res) => {
         const stats = await cacheService.getCacheStats();
@@ -218,6 +222,7 @@ function createWebServer({
 
     app.post(
       "/api/admin/cache/clear",
+      adminLimiter,
       apiKeyAuth,
       asyncHandler(async (req, res) => {
         await cacheService.invalidateAll();
