@@ -1,5 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const { setTimeout: delay } = require("node:timers/promises");
 
 const {
   CacheService,
@@ -55,6 +56,36 @@ test("cache service memory mode enforces rate limits and reports degraded health
     isConnected: false,
     fallback: true,
     memoryKeys: 1,
+  });
+});
+
+test("cache service memory rate limit resets after window expires", async () => {
+  const cache = new CacheService(null);
+
+  const first = await cache.checkRateLimit("lead-submit", 1, 1);
+  const second = await cache.checkRateLimit("lead-submit", 1, 1);
+
+  await delay(1100);
+
+  const third = await cache.checkRateLimit("lead-submit", 1, 1);
+
+  assert.deepEqual(first, {
+    allowed: true,
+    remaining: 0,
+    resetIn: 1,
+    limit: 1,
+  });
+  assert.deepEqual(second, {
+    allowed: false,
+    remaining: 0,
+    resetIn: 1,
+    limit: 1,
+  });
+  assert.deepEqual(third, {
+    allowed: true,
+    remaining: 0,
+    resetIn: 1,
+    limit: 1,
   });
 });
 

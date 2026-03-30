@@ -407,9 +407,16 @@ class CacheService {
   }
 
   memoryRateLimit(key, limit, windowSeconds) {
+    const expiry = this.memoryCacheExpiry.get(key);
+    if (expiry && Date.now() > expiry) {
+      this.memoryDelete(key);
+    }
+
     const current = (this.memoryCache.get(key) || 0) + 1;
     this.memoryCache.set(key, current);
-    this.memoryCacheExpiry.set(key, Date.now() + windowSeconds * 1000);
+    if (!this.memoryCacheExpiry.has(key)) {
+      this.memoryCacheExpiry.set(key, Date.now() + windowSeconds * 1000);
+    }
 
     return {
       allowed: current <= limit,
