@@ -332,3 +332,100 @@ test("admin reply returns 503 when Telegram delivery is disabled", async (t) => 
   assert.equal(payload.ok, false);
   assert.match(payload.error, /disabled/i);
 });
+
+test("admin queue/cache routes keep contracts and remain API-key protected", async (t) => {
+  const adminId = 9001;
+  const apiSecret = "test-api-secret";
+  const { db, cleanup } = createTempDb("bot-noct-api-");
+  const repos = createRepositories(db);
+
+  const queueService = {
+    async getQueueStats() {
+      return [{ name: "default", waiting: 1, active: 0 }];
+    },
+    async pauseQueue() {},
+    async resumeQueue() {},
+  };
+  const cacheService = {
+    async getCacheStats() {
+      return { keys: 3, hits: 10, misses: 2 };
+    },
+    async invalidateAll() {},
+  };
+
+  const app = createWebServer({
+    repos,
+    conversationService: {},
+    bot: {},
+    adminId,
+    apiSecret,
+    corsOrigin: null,
+    isProduction: false,
+    queueService,
+    cacheService,
+  });
+  const server = await startServer(app);
+  t.after(async () => {
+    await stopServer(server);
+    cleanup();
+  });
+
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+
+  const unauthorizedQueues = await fetch(`${baseUrl}/api/admin/queues`);
+  assert.equal(unauthorizedQueues.status, 401);
+
+  const headers = { "X-Api-Key": apiSecret };
+
+  const queuesResponse = await fetch(`${baseUrl}/api/admin/queues`, { headers });
+  assert.equal(queuesResponse.status, 200);
+  const queuesPayload = await queuesResponse.json();
+  assert.deepEqual(queuesPayload, {
+    success: true,
+    data: [{ name: "default", waiting: 1, active: 0 }],
+  });
+
+  const pauseResponse = await fetch(`${baseUrl}/api/admin/queues/default/pause`, {
+    method: "POST",
+    headers,
+  });
+  assert.equal(pauseResponse.status, 200);
+  const pausePayload = await pauseResponse.json();
+  assert.deepEqual(pausePayload, {
+    success: true,
+    message: "Queue default paused",
+  });
+
+  const resumeResponse = await fetch(
+    `${baseUrl}/api/admin/queues/default/resume`,
+    {
+      method: "POST",
+      headers,
+    },
+  );
+  assert.equal(resumeResponse.status, 200);
+  const resumePayload = await resumeResponse.json();
+  assert.deepEqual(resumePayload, {
+    success: true,
+    message: "Queue default resumed",
+  });
+
+  const cacheResponse = await fetch(`${baseUrl}/api/admin/cache`, { headers });
+  assert.equal(cacheResponse.status, 200);
+  const cachePayload = await cacheResponse.json();
+  assert.deepEqual(cachePayload, {
+    success: true,
+    data: { keys: 3, hits: 10, misses: 2 },
+  });
+
+  const clearResponse = await fetch(`${baseUrl}/api/admin/cache/clear`, {
+    method: "POST",
+    headers,
+  });
+  assert.equal(clearResponse.status, 200);
+  const clearPayload = await clearResponse.json();
+  assert.deepEqual(clearPayload, {
+    success: true,
+    message: "Cache cleared",
+  });
+});
